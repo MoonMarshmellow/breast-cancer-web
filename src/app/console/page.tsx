@@ -5,12 +5,13 @@ import useSelectFile from "@/hooks/useSelectFile";
 import firebase from "firebase/compat/app";
 import { addDoc, collection, doc, getDocs, serverTimestamp, setDoc, Timestamp, updateDoc } from "firebase/firestore";
 import { ref, uploadString, getDownloadURL } from "firebase/storage";
-import router from "next/router";
+import { redirect } from "next/navigation";
+import router, { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useAuthState } from "react-firebase-hooks/auth";
 
 
-type Patient = {
+export type Patient = {
     id: string,
     name: string,
     age: string,
@@ -18,6 +19,7 @@ type Patient = {
     email: string,
     insurance: string,
     biopsis: string,
+    pathologist: string,
     imageURL?: string
 }
 
@@ -26,7 +28,16 @@ export default function Console(){
     const [error, setError] = useState('')
     const [loading, setLoading] = useState(false)
 
+    const router = useRouter()
+
     const [patients, setPatients] = useState<Patient[]>([])
+    const bgColor = {
+        // default: '',
+        ["No Scans" as string]: 'text-base',
+        ["Clear" as string]: 'text-green-500',
+        ["Cancer" as string]: 'text-red-500',
+
+      }
     
     const [patientForm, setPatientForm] = useState({
         name:'',
@@ -38,32 +49,50 @@ export default function Console(){
 
     const { selectedFile, setSelectedFile, onSelectFile } = useSelectFile();
 
-    const getPatients = async () =>{
-        if (user) {
-            const querySnapshot = await getDocs(collection(firestore, "users", user.uid, "patients"));
-            querySnapshot.forEach((doc) => {
-                setPatients([...patients, doc.data() as Patient])
-            });
-        }
 
-    }
     
     useEffect(()=>{
-        getPatients()   
+        const getPatients = async () =>{
+            if (user) {
+                const querySnapshot = await getDocs(collection(firestore, "users", user.uid, "patients"));
+                querySnapshot.forEach((doc) => {
+                    setPatients(prevPatients => [...prevPatients, doc.data() as Patient]);
+                });
+            } else {
+                console.log('no user')
+            }
+    
+        }
+        getPatients()
     }, [user])
 
 
     const onSubmit = async () => {
         setLoading(true);
+        setError('')
+
+
+        if (!Number(patientForm.age)){
+            setError("Age must be a number")
+            setLoading(false)
+            return
+        } else if (!Number(patientForm.phone)){
+            setError("Phone must be a number")
+            setLoading(false)
+            return
+        }
+
+        const dialog = document.getElementById('my_modal_1') as HTMLDialogElement;
+
         if (user) {
 
             try {
-
             const patientDocRef = doc(collection(firestore, "users", user.uid, 'patients'))
             const patientData = {
                 ...patientForm,
                 id:patientDocRef.id,
                 biopsis: "No Scans",
+                pathologist: "No Diagnosis"
             }
             await setDoc(patientDocRef, JSON.parse(JSON.stringify(patientData)));
             const newDocRef = doc(firestore, "users", user.uid, 'patients', patientDocRef.id)
@@ -90,6 +119,12 @@ export default function Console(){
         }else{
             setError("No User")
             setLoading(false);
+        }
+        console.log(error)
+        if(error == ''){
+            dialog.close()
+            setPatientForm({name: '', age:'', phone:'', email:'', insurance:''})
+            setSelectedFile('')
         }
         setLoading(false);
     }
@@ -127,17 +162,18 @@ export default function Console(){
                             <p className="my-2">Insurance</p>
                             <input name="insurance" onChange={onChange} type="text" placeholder="Patient Insurance Provider" className="input input-bordered w-full max-w-xs mb-1" />
                             <p className="my-2">Patient Photo</p>
-                            <input name="pfp" onChange={onSelectFile} type="file" className="file-input file-input-bordered w-full max-w-xs mb-1" />
+                            <input name="pfp" accept="image/png, image/jpeg" onChange={onSelectFile} type="file" className="file-input file-input-bordered w-full max-w-xs mb-1" />
+                            {error && <p className="text-red-600">{error}</p>}
                         </form>
                         <div className="modal-action">
-                        <form method="dialog">
-                            {/* if there is a button in form, it will close the modal */}
-                        <button className="btn btn-primary" onClick={onSubmit}>{loading ? <svg className="animate-spin" xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24">
+                        <button onClick={onSubmit} className="btn btn-primary">{loading ? <svg className="animate-spin" xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24">
                             <path fill="currentColor" d="M12,1A11,11,0,1,0,23,12,11,11,0,0,0,12,1Zm0,19a8,8,0,1,1,8-8A8,8,0,0,1,12,20Z" opacity="0.25" />
                             <path fill="currentColor" d="M12,4a8,8,0,0,1,7.89,6.7A1.53,1.53,0,0,0,21.38,12h0a1.5,1.5,0,0,0,1.48-1.75,11,11,0,0,0-21.72,0A1.5,1.5,0,0,0,2.62,12h0a1.53,1.53,0,0,0,1.49-1.3A8,8,0,0,1,12,4Z">
                             </path>
                         </svg> : "Add Patient"}
                         </button>
+                        <form method="dialog">
+                            {/* if there is a button in form, it will close the modal */}
                             <button className="btn">Close</button>
                         </form>
                         </div>
@@ -153,16 +189,20 @@ export default function Console(){
                     <tr>
                         <th></th>
                         <th>Name</th>
-                        <th>Job</th>
-                        <th>Favorite Color</th>
+                        <th>Age</th>
+                        <th>AI Diagnosis</th>
+                        <th>Phone Number</th>
+                        <th>Email</th>
+                        <th>Insurance Provider</th>
                     </tr>
                     </thead>
                     <tbody>
-                        {patients.map((patient) => (
-                        <tr key={patient.id}>
+                        {patients.map((patient, index) => (
+                        <tr key={patient.id} className="hover cursor-pointer" onClick={()=>{router.push(`/console/patient/${patient.id}`)}}>
+                        <th>{index+1}</th>  
                         <th>{patient.name}</th>
                         <th>{patient.age}</th>
-                        <th>{patient.biopsis}</th>
+                        <th className={bgColor[patient.biopsis]}>{patient.biopsis}</th>
                         <th>{patient.phone}</th>
                         <th>{patient.email}</th>
                         <th>{patient.insurance}</th>

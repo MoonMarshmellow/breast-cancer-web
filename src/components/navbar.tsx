@@ -2,17 +2,28 @@
 
 import { auth } from "@/firebase";
 import { signOut } from "firebase/auth";
+import Link from "next/link";
+import { redirect, useRouter } from "next/navigation";
+import { useEffect } from "react";
 import { useAuthState } from "react-firebase-hooks/auth";
 
 export default function Navbar(){
+    const router = useRouter()
+
     const [user] = useAuthState(auth)
     const logout = async () => {
         await signOut(auth);
         //clear community state
     };
+
+    useEffect(()=>{
+        if (!user) {
+            router.push('/') 
+        }
+    })
     return(
-        <div className="flex justify-between w-full items-center p-2 bg-base-300">
-            <h1 className="text-2xl ml-2 font-bold font-sans text-primary">BioML</h1>
+        <div className="flex justify-between w-full items-center p-2 bg-base-200">
+            <Link href="/console" className="text-2xl ml-8 font-bold font-sans text-primary">BioML</Link>
             <div className="flex justify-center items-center h-full mr-2">
                 <label className="swap swap-rotate mr-4">
                     {/* this hidden checkbox controls the state */}
@@ -38,7 +49,7 @@ export default function Navbar(){
                     </label>
                 <p className='text-base pr-2'>{user?.email}</p>
                 <div className="dropdown dropdown-end">
-                <div tabIndex={0} role="button" className="btn btn-ghost btn-circle avatar">
+                <div tabIndex={0} role="button" className="btn btn-ghost btn-circle avatar mr-5">
                     <div className="w-10 rounded-full">
                     <img alt="User Image" src="https://t3.ftcdn.net/jpg/03/58/90/78/360_F_358907879_Vdu96gF4XVhjCZxN2kCG0THTsSQi8IhT.jpg" />
                     </div>

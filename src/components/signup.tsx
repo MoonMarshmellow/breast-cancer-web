@@ -9,7 +9,7 @@ type signupProps = {
     
 };
 
-const signup:React.FC<signupProps> = () => {
+const Signup:React.FC<signupProps> = () => {
     const [signUpForm, setSignUpForm] = useState({
         email: "",
         password: "",
@@ -95,4 +95,4 @@ const signup:React.FC<signupProps> = () => {
         </>
     )
 }
-export default signup;
+export default Signup;

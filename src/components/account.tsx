@@ -17,14 +17,14 @@ const Account:React.FC<accountProps> = () => {
 
     useEffect(()=>{
         if (user) {
-            redirect('/console')  
+            redirect("/console")  
         } 
     }, [user])
     return(
         <>
         {signup ? <Signup /> : <Login />}
-        <div className='cursor-pointer pt-2 text-center text-sm'>
-        {signup ? <a onClick={() => setSignup(false)}>Already have an account? Click here to Login instead.</a> : <a onClick={() => setSignup(true)}>Don't have an account? Click here to sign up.</a>}
+        <div className="cursor-pointer pt-2 text-center text-sm">
+        {signup ? <a onClick={() => setSignup(false)}>Already have an account? Click here to Login instead.</a> : <a onClick={() => setSignup(true)}>{"Don't have an account? Click here to sign up."}</a>}
         </div>
         </>
     )

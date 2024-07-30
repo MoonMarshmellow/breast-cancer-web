@@ -51,7 +51,7 @@ export default function PatientPage({ params }: { params: { id: string } }){
             <div className="mx-10 mt-10 flex md:flex-row lg:flex-row flex-col ">
             <div className="lg:w-[50%] md:w-[50%] w-full items-center">
             <div className="flex items-center">
-                <img className="object-cover rounded-full h-[100px] w-[100px] shadow-lg border-[2px] border-primary mr-5" src={patient.imageURL}/>
+                <img alt="Profile Photo" className="object-cover rounded-full h-[100px] w-[100px] shadow-lg border-[2px] border-primary mr-5" src={patient.imageURL}/>
                 <div>
                     <h2 className="text-3xl font-sans font-semibold">{patient.name}</h2>
                     <p className="flex mt-2">Age: <p className="font-semibold ml-1">{patient.age}</p></p>

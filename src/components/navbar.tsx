@@ -16,11 +16,6 @@ export default function Navbar(){
         //clear community state
     };
 
-    useEffect(()=>{
-        if (!user) {
-            router.push('/') 
-        }
-    })
     return(
         <div className="flex justify-between w-full items-center p-2 bg-base-200">
             <Link href="/console" className="text-2xl ml-8 font-bold font-sans text-primary">BioML</Link>

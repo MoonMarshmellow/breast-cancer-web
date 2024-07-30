@@ -52,6 +52,9 @@ export default function Console(){
 
     
     useEffect(()=>{
+        if (!user) {
+            router.push('/') 
+        }
         const getPatients = async () =>{
             if (user) {
                 const querySnapshot = await getDocs(collection(firestore, "users", user.uid, "patients"));
@@ -63,7 +66,10 @@ export default function Console(){
             }
     
         }
-        getPatients()
+        if(patients.length == 0){
+            getPatients()
+
+        }
     }, [user])
 
 
@@ -182,6 +188,12 @@ export default function Console(){
                     </dialog>
                 </div>
             </div>
+            {patients.length == 0 ? 
+            <div className="flex flex-col w-full justify-center items-center mt-20">
+                <h2 className="text-4xl font-medium mb-1">No Patients</h2>
+                <p>Add a patient to get started.</p>
+            </div>
+            :     
             <div className="overflow-x-auto">
                 <table className="table">
                     {/* head */}
@@ -190,6 +202,7 @@ export default function Console(){
                         <th></th>
                         <th>Name</th>
                         <th>Age</th>
+                        <th>Pathologist Diagnosis</th>
                         <th>AI Diagnosis</th>
                         <th>Phone Number</th>
                         <th>Email</th>
@@ -202,6 +215,7 @@ export default function Console(){
                         <th>{index+1}</th>  
                         <th>{patient.name}</th>
                         <th>{patient.age}</th>
+                        <th className={bgColor[patient.pathologist]}>{patient.pathologist}</th>
                         <th className={bgColor[patient.biopsis]}>{patient.biopsis}</th>
                         <th>{patient.phone}</th>
                         <th>{patient.email}</th>
@@ -211,6 +225,7 @@ export default function Console(){
                     </tbody>
                 </table>
             </div>
+        }
         </div>
         </>
     )

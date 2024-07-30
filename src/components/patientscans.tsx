@@ -1,3 +1,5 @@
+'use client'
+
 import { firestore, storage } from '@/firebase';
 import useSelectFile from '@/hooks/useSelectFile';
 import { User } from 'firebase/auth';
@@ -20,6 +22,15 @@ type Scan = {
 }
 
 const PatientScans:React.FC<PatientScansProps> = ({patientId, user}) => {
+    const bgColor = {
+        // default: '',
+        ["No Scans" as any]: 'text-base',
+        ["Clear" as any]: 'text-green-500',
+        ["Cancer" as any]: 'text-red-500',
+
+    }
+    
+    
     const [error, setError] = useState('')
     const [loading, setLoading] = useState(false)
 
@@ -54,23 +65,16 @@ const PatientScans:React.FC<PatientScansProps> = ({patientId, user}) => {
             }
             
             const scanDocRef = doc(collection(firestore, "users", user.uid, 'patients', patientId, 'scans'))
+            const imageRef = ref(storage, `scans/${scanDocRef.id}/image`);
+            await uploadString(imageRef, selectedFile, "data_url");
+            const downloadURL = await getDownloadURL(imageRef);
             const scanData = {
                 ...scanForm,
                 id:scanDocRef.id,
                 aiDiagnosis: "Loading..",
-                pathologist: "No Diagnosis"
+                imageURL: downloadURL
             }
             await setDoc(scanDocRef, JSON.parse(JSON.stringify(scanData)));
-            const newDocRef = doc(firestore, "users", user.uid, 'patients', patientId, "scans", scanDocRef.id)
-            //store it in storage => getDownloadURL (return imageURL) => stored in DB
-            const imageRef = ref(storage, `scans/${scanDocRef.id}/image`);
-            await uploadString(imageRef, selectedFile, "data_url");
-            //update post with URL
-            const downloadURL = await getDownloadURL(imageRef);
-
-            await updateDoc(newDocRef, {
-            imageURL: downloadURL,
-            });
 
             setScans([...scans, scanData])
 
@@ -91,19 +95,18 @@ const PatientScans:React.FC<PatientScansProps> = ({patientId, user}) => {
         setLoading(false);
     }
 
-    const onUpdate = async (scanId: string) => {
+    const onUpdate = async (scan: Scan) => {
         setLoading(true);
-        const dialog = document.getElementById(scanId) as HTMLDialogElement;
+        const dialog = document.getElementById(scan.id) as HTMLDialogElement;
+        
         if (user) {
 
             try {
             
-            const scanDocRef = doc(firestore, "users", user.uid, 'patients', patientId, 'scans', scanId)
+            
+            const scanDocRef = doc(firestore, "users", user.uid, 'patients', patientId, 'scans', scan.id)
             const scanData = {
                 ...scanForm,
-                id:scanDocRef.id,
-                aiDiagnosis: "Loading..",
-                pathologist: "No Diagnosis"
             }
             await updateDoc(scanDocRef, JSON.parse(JSON.stringify(scanData)));
             if(selectedFile){
@@ -116,8 +119,16 @@ const PatientScans:React.FC<PatientScansProps> = ({patientId, user}) => {
                 imageURL: downloadURL,
                 });
             }
-            //store it in storage => getDownloadURL (return imageURL) => stored in DB
-
+            const currentScanIndex = scans.findIndex((scan1) => scan1.id === scan.id);
+            // 2. Mark the todo as complete
+            const updatedTodo = {...scans[currentScanIndex], ...scanData};
+            // 3. Update the todo list with the updated todo
+            const newTodos = [
+                ...scans.slice(0, currentScanIndex),
+                updatedTodo,
+                ...scans.slice(currentScanIndex + 1)
+            ];
+            setScans(newTodos);
             } catch (error: any) {
             console.log("updateScan error", error.message);
             setError(error.message);
@@ -136,7 +147,7 @@ const PatientScans:React.FC<PatientScansProps> = ({patientId, user}) => {
     }
 
     useEffect(()=>{
-        const getPatients = async () =>{
+        const getScans = async () =>{
             if (user) {
                 const querySnapshot = await getDocs(collection(firestore, "users", user.uid, "patients", patientId, "scans"));
                 querySnapshot.forEach((doc) => {
@@ -144,11 +155,13 @@ const PatientScans:React.FC<PatientScansProps> = ({patientId, user}) => {
                 });
             } else {
                 console.log('no user')
-            }
-    
+            }  
         }
-        getPatients()
+        if(scans.length == 0){
+            getScans()
+        }
     }, [user])
+
     return(
         <>
         <div className="">
@@ -218,11 +231,12 @@ const PatientScans:React.FC<PatientScansProps> = ({patientId, user}) => {
                         <tr key={scan.id} className=" hover:bg-base-100 cursor-pointer" onClick={() => {
                             const dialog = document.getElementById(scan.id) as HTMLDialogElement;
                             dialog.showModal();
+                            setScanForm({scanDate: scan.scanDate as any, biopsyType: scan.biopsyType, pathologist: scan.pathologist})
                             }}>
                         <th>{scan.scanDate?.toString()}</th>
                         <th>{scan.biopsyType}</th>
-                        <th>{scan.pathologist}</th>
-                        <th>{scan.aiDiagnosis}</th>
+                        <th className={bgColor[scan.pathologist as any]}>{scan.pathologist}</th>
+                        <th className={bgColor[scan.aiDiagnosis as any]}>{scan.aiDiagnosis}</th>
                         </tr>
                         <dialog id={scan.id} className="modal">
                         <div className="modal-box max-w-[40rem]">
@@ -254,7 +268,7 @@ const PatientScans:React.FC<PatientScansProps> = ({patientId, user}) => {
                             </form>
                             </div>
                             <div className="modal-action">
-                            <button onClick={()=>onUpdate(scan.id)} className="btn btn-primary">{loading ? <svg className="animate-spin" xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24">
+                            <button onClick={()=>onUpdate(scan)} className="btn btn-primary">{loading ? <svg className="animate-spin" xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24">
                             <path fill="currentColor" d="M12,1A11,11,0,1,0,23,12,11,11,0,0,0,12,1Zm0,19a8,8,0,1,1,8-8A8,8,0,0,1,12,20Z" opacity="0.25" />
                             <path fill="currentColor" d="M12,4a8,8,0,0,1,7.89,6.7A1.53,1.53,0,0,0,21.38,12h0a1.5,1.5,0,0,0,1.48-1.75,11,11,0,0,0-21.72,0A1.5,1.5,0,0,0,2.62,12h0a1.53,1.53,0,0,0,1.49-1.3A8,8,0,0,1,12,4Z">
                             </path>

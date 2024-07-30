@@ -11,7 +11,7 @@ type accountProps = {
     
 };
 
-const account:React.FC<accountProps> = () => {
+const Account:React.FC<accountProps> = () => {
     const [signup, setSignup] = useState(false)
     const [user] = useAuthState(auth)
 
@@ -29,4 +29,4 @@ const account:React.FC<accountProps> = () => {
         </>
     )
 }
-export default account;
+export default Account;

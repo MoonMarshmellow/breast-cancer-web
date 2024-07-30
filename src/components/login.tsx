@@ -8,7 +8,7 @@ type loginProps = {
     
 };
 
-const login:React.FC<loginProps> = () => {
+const Login:React.FC<loginProps> = () => {
     const [loginForm, setLoginForm] = useState({
         email: "",
         password: "",
@@ -49,4 +49,4 @@ const login:React.FC<loginProps> = () => {
             </form>
     )
 }
-export default login;
+export default Login;

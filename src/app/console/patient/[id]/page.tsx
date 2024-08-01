@@ -23,7 +23,7 @@ export default function PatientPage({ params }: { params: { id: string } }){
         ["Cancer" as string]: 'bg-red-500 text-neutral rounded-full px-2 ml-2 font-semibold',
     }
 
-    const [user] = useAuthState(auth)
+    const [user, isLoading] = useAuthState(auth)
 
     const [patient, setPatient] = useState<Patient>()
 
@@ -41,10 +41,13 @@ export default function PatientPage({ params }: { params: { id: string } }){
                 console.log('No User')
             }
         }
-
+        if (isLoading) {
+            return
+        }
         getPatient()
+        console.log("gotpatient")
 
-    })
+    }, [user, isLoading])
     return(
         <>
             {patient ? 
@@ -67,7 +70,7 @@ export default function PatientPage({ params }: { params: { id: string } }){
             <p className="flex">Insurance Provider: <p className="ml-2 font-semibold">{patient.insurance}</p> </p>
             </div>
             <div className=" lg:w-[50%] md:w-[50%] w-full">
-                <PatientScans patientId={params.id} user={user}/>
+                <PatientScans patientId={params.id} user={user} isLoading={isLoading}/>
             </div>
             </div>
             : 

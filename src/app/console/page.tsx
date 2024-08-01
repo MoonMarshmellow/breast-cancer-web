@@ -24,7 +24,7 @@ export type Patient = {
 }
 
 export default function Console(){
-    const [user] = useAuthState(auth)
+    const [user, isLoading] = useAuthState(auth)
     const [error, setError] = useState('')
     const [loading, setLoading] = useState(false)
 
@@ -66,8 +66,12 @@ export default function Console(){
             }
     
         }
+        if (isLoading) {
+            return
+        }
         if(patients.length == 0){
             getPatients()
+            console.log("gotpatients")
 
         }
     }, [user])

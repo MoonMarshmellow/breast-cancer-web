@@ -10,6 +10,7 @@ import React, { useEffect, useState } from 'react';
 type PatientScansProps = {
     patientId: string
     user: User | null | undefined
+    isLoading: boolean
 };
 
 type Scan = {
@@ -21,7 +22,7 @@ type Scan = {
     imageURL?: string,
 }
 
-const PatientScans:React.FC<PatientScansProps> = ({patientId, user}) => {
+const PatientScans:React.FC<PatientScansProps> = ({patientId, user, isLoading}) => {
     const bgColor = {
         // default: '',
         ["No Scans" as any]: 'text-base',
@@ -120,9 +121,7 @@ const PatientScans:React.FC<PatientScansProps> = ({patientId, user}) => {
                 });
             }
             const currentScanIndex = scans.findIndex((scan1) => scan1.id === scan.id);
-            // 2. Mark the todo as complete
             const updatedTodo = {...scans[currentScanIndex], ...scanData};
-            // 3. Update the todo list with the updated todo
             const newTodos = [
                 ...scans.slice(0, currentScanIndex),
                 updatedTodo,
@@ -157,8 +156,12 @@ const PatientScans:React.FC<PatientScansProps> = ({patientId, user}) => {
                 console.log('no user')
             }  
         }
+        if (isLoading) {
+            return
+        }
         if(scans.length == 0){
             getScans()
+            console.log("gotscans")
         }
     }, [user])
 
